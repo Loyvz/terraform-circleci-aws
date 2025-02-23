@@ -1,38 +1,42 @@
 version: 2.1
 
 executors:
-  terraform:
+  default:
     docker:
-      - image: hashicorp/terraform:latest
+      - image: cimg/python:3.9
 
 jobs:
-  terraform:
-    executor: terraform
+  build:
+    executor: default
     steps:
       - checkout
       - run:
           name: Install AWS CLI
           command: |
-            apk add --no-cache python3 py3-pip
-            pip install awscli
+            apt-get update && apt-get install -y unzip
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+            aws --version
       - run:
-          name: Initialize Terraform
+          name: Install Terraform
+          command: |
+            curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+            sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+            sudo apt-get update && sudo apt-get install terraform
+            terraform -version
+      - run:
+          name: Terraform Init
           command: terraform init
       - run:
-          name: Terraform Format
-          command: terraform fmt -check
-      - run:
-          name: Terraform Validate
-          command: terraform validate
-      - run:
           name: Terraform Plan
-          command: terraform plan -out=tfplan
+          command: terraform plan
       - run:
           name: Terraform Apply
           command: terraform apply -auto-approve
 
 workflows:
   version: 2
-  deploy:
+  terraform_deployment:
     jobs:
-      - terraform
+      - build
