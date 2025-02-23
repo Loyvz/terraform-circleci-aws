@@ -3,52 +3,39 @@ version: 2.1
 jobs:
   setup:
     docker:
-      - image: ubuntu:latest  # Usa una imagen de Ubuntu en lugar de Python
+      - image: cimg/base:stable
     steps:
       - checkout
       - run:
-        name: Install Dependencies
-        command: |
-          export DEBIAN_FRONTEND=noninteractive
-          apt-get update && apt-get install -y unzip curl jq software-properties-common tzdata
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip awscliv2.zip
-          ./aws/install
-          aws --version    
+          name: Install Dependencies
+          command: |
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update && apt-get install -y unzip curl jq software-properties-common tzdata
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            ./aws/install
+            aws --version
+
+  deploy:
+    docker:
+      - image: hashicorp/terraform:latest
+    steps:
+      - checkout
       - run:
           name: Install Terraform
           command: |
-            curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-            echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
-            apt-get update && apt-get install -y terraform
-            terraform -version
-      - persist_to_workspace:
-          root: .
-          paths:
-            - .
-
-  terraform_apply:
-    docker:
-      - image: hashicorp/terraform:1.5
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
+            terraform --version
       - run:
-          name: Initialize Terraform
-          command: terraform init
-      - run:
-          name: Validate Terraform Configuration
-          command: terraform validate
-      - run:
-          name: Apply Terraform Configuration
-          command: terraform apply -auto-approve
+          name: Terraform Init & Apply
+          command: |
+            terraform init
+            terraform apply -auto-approve
 
 workflows:
   version: 2
-  deploy:
+  build-deploy:
     jobs:
       - setup
-      - terraform_apply:
+      - deploy:
           requires:
             - setup
