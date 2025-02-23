@@ -3,17 +3,18 @@ version: 2.1
 jobs:
   setup:
     docker:
-      - image: cimg/base:stable
+      - image: cimg/python:3.10
     steps:
       - checkout
       - run:
           name: Install Dependencies
           command: |
             export DEBIAN_FRONTEND=noninteractive
-            apt-get update && apt-get install -y unzip curl jq software-properties-common tzdata
+            apt-get update && apt-get install -y unzip curl jq software-properties-common
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip awscliv2.zip
-            ./aws/install
+            ./aws/install --install-dir ~/.local/aws-cli
+            export PATH="~/.local/aws-cli/bin:$PATH"
             aws --version
 
   deploy:
