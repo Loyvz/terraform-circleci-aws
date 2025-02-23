@@ -3,13 +3,13 @@ version: 2.1
 jobs:
   setup:
     docker:
-      - image: python:3.9  # Usamos Python en Debian para compatibilidad
+      - image: ubuntu:latest  # Usa una imagen de Ubuntu en lugar de Python
     steps:
       - checkout
       - run:
           name: Install Dependencies
           command: |
-            apt-get update && apt-get install -y unzip curl jq
+            apt-get update && apt-get install -y unzip curl jq software-properties-common
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip awscliv2.zip
             ./aws/install
@@ -17,8 +17,8 @@ jobs:
       - run:
           name: Install Terraform
           command: |
-            curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
-            apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+            curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+            echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
             apt-get update && apt-get install -y terraform
             terraform -version
       - persist_to_workspace:
