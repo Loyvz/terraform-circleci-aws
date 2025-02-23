@@ -1,14 +1,14 @@
 version: 2.1
 
 executors:
-  default:
+  ubuntu:
     docker:
-      - image: hashicorp/terraform:latest
+      - image: ubuntu:latest
     resource_class: medium
 
 jobs:
   setup:
-    executor: default
+    executor: ubuntu
     steps:
       - checkout
       - run:
@@ -20,8 +20,10 @@ jobs:
             sudo ./aws/install
             aws --version
 
-  deploy:
-    executor: default
+  terraform:
+    docker:
+      - image: hashicorp/terraform:latest
+    resource_class: medium
     steps:
       - checkout
       - run:
@@ -35,6 +37,6 @@ workflows:
   build-deploy:
     jobs:
       - setup
-      - deploy:
+      - terraform:
           requires:
             - setup
