@@ -1,9 +1,38 @@
 version: 2.1
 
-jobs:
-  build:
+executors:
+  terraform:
     docker:
-      - image: cimg/base:stable
+      - image: hashicorp/terraform:latest
+
+jobs:
+  terraform:
+    executor: terraform
     steps:
       - checkout
-      - run: echo "Hello, CircleCI!"
+      - run:
+          name: Install AWS CLI
+          command: |
+            apk add --no-cache python3 py3-pip
+            pip install awscli
+      - run:
+          name: Initialize Terraform
+          command: terraform init
+      - run:
+          name: Terraform Format
+          command: terraform fmt -check
+      - run:
+          name: Terraform Validate
+          command: terraform validate
+      - run:
+          name: Terraform Plan
+          command: terraform plan -out=tfplan
+      - run:
+          name: Terraform Apply
+          command: terraform apply -auto-approve
+
+workflows:
+  version: 2
+  deploy:
+    jobs:
+      - terraform
